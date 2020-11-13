@@ -1,11 +1,11 @@
-import pandas as pd
-from covid import Covid
 from decimal import Decimal
-import sqlalchemy as sqla
+from covid import Covid
+import pandas as pd
+import sqlalchemy
 import json
 
 
-# Extract
+# ==== Extract & Transform ====
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Decimal):
@@ -13,24 +13,31 @@ class DecimalEncoder(json.JSONEncoder):
         return super(DecimalEncoder, self).default(obj)
 
 
+# todays covid data from 191 countries
 data = json.dumps(Covid().get_data(), cls=DecimalEncoder)
-
 df = pd.read_json(data, convert_dates=['last_update'])
-print(df.head(), '\nlength:', len(df))
 
-# Load
+
+# ==== Load ====
 DB_LOC = 'mysql+pymysql://root:passwel@localhost/covid19docker'
-engine = sqla.create_engine(DB_LOC)
+engine = sqlalchemy.create_engine(DB_LOC)
 
 table_name = 'covid19'
+new = True
 
-df.to_sql(
-    table_name,
-    engine,
-    if_exists='replace',
-    index=False
-)
+try:
+    newest_date = engine.execute('select max(last_update) from covid19;')
+    if newest_date.first()[0] == df.last_update.max().to_pydatetime():
+        new = False
+except sqlalchemy.exc.DatabaseError:
+    print("'covid19' table does not exist")
 
-result = engine.execute('show tables;')
-for _r in result:
-    print(_r)
+if new:
+    df.to_sql(
+        table_name,
+        engine,
+        if_exists='replace',
+        index=False
+    )
+
+print(pd.read_sql_query('select * from covid19 limit1', engine).head(1))
