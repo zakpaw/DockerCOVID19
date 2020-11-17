@@ -2,6 +2,7 @@ from decimal import Decimal
 from covid import Covid
 import pandas as pd
 import sqlalchemy
+import pymysql
 import json
 
 
@@ -20,7 +21,10 @@ df = pd.read_json(data, convert_dates=['last_update'])
 
 # ==== Load ====
 DB_LOC = 'mysql+pymysql://root:passwel@localhost/covid19docker'
-engine = sqlalchemy.create_engine(DB_LOC)
+try:
+    engine = sqlalchemy.create_engine(DB_LOC)
+except pymysql.err.OperationalError:
+    print('Cant connect to MySQL server')
 
 table_name = 'covid19'
 new = True
@@ -29,7 +33,7 @@ try:
     newest_date = engine.execute('select max(last_update) from covid19;')
     if newest_date.first()[0] == df.last_update.max().to_pydatetime():
         new = False
-except sqlalchemy.exc.DatabaseError:
+except sqlalchemy.exc.OperationalError:
     print("'covid19' table does not exist")
 
 if new:
