@@ -2,4 +2,4 @@
 ```bash
 docker-compose up
 ```
-### from the directory where the file docker-compose.yml is.
+### from the directory where docker-compose.yml is.
