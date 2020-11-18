@@ -1,0 +1,21 @@
+version: "2"
+services:
+  app:
+    build: ./app
+    container_name: "Python_app"
+    links:
+      - db
+    ports:
+      - "5000:5000"
+
+  db:
+    image: mysql
+    container_name: "MySQL_COVID"
+    ports:
+      - "32000:3206"
+    environment:
+      - MYSQL_USER=root
+      - MYSQL_ROOT_PASSWORD=passwel
+      - MYSQL_HOST=db
+    volumes: #map local to container
+      - ./db:/docker-entrypoint-initdb.d/:ro 

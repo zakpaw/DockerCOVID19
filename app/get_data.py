@@ -20,11 +20,16 @@ df = pd.read_json(data, convert_dates=['last_update'])
 
 
 # ==== Load ====
-DB_LOC = 'mysql+pymysql://root:passwel@localhost/covid19docker'
-try:
-    engine = sqlalchemy.create_engine(DB_LOC)
-except pymysql.err.OperationalError:
-    print('Cant connect to MySQL server')
+def connect():
+    URI = 'mysql+pymysql://root:passwel@db:3306/covid'
+    try:
+        return sqlalchemy.create_engine(URI)
+    except sqlalchemy.exc.OperationalError:
+        print('Cant connect to MySQL server')
+        quit()
+
+
+engine = connect()
 
 table_name = 'covid19'
 new = True
@@ -34,8 +39,7 @@ try:
     if newest_date.first()[0] == df.last_update.max().to_pydatetime():
         new = False
 except sqlalchemy.exc.OperationalError:
-    print("'covid19' table does not exist")
-
+    print("'covid19' table does not exist :00")
 if new:
     df.to_sql(
         table_name,
@@ -44,4 +48,4 @@ if new:
         index=False
     )
 
-print(pd.read_sql_query('select * from covid19 limit1', engine).head(1))
+print(pd.read_sql_query('select * from covid19 limit1', engine).head(5))
