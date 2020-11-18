@@ -39,7 +39,7 @@ try:
     if newest_date.first()[0] == df.last_update.max().to_pydatetime():
         new = False
 except sqlalchemy.exc.OperationalError:
-    print("'covid19' table does not exist :00")
+    print("'covid19' table does not exist!")
 if new:
     df.to_sql(
         table_name,

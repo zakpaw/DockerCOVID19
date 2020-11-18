@@ -1,5 +1,3 @@
-# first Docker project
-
 ## run <br>
 ```bash
 docker-compose up
