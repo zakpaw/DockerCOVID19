@@ -40,6 +40,7 @@ try:
         new = False
 except sqlalchemy.exc.OperationalError:
     print("'covid19' table does not exist!")
+
 if new:
     df.to_sql(
         table_name,
