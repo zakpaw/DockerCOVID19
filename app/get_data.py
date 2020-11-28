@@ -1,8 +1,8 @@
 from decimal import Decimal
 from covid import Covid
+import country_converter as coco
 import pandas as pd
 import sqlalchemy
-import pymysql
 import json
 
 
@@ -15,8 +15,17 @@ class DecimalEncoder(json.JSONEncoder):
 
 
 # todays covid data from 191 countries
-data = json.dumps(Covid().get_data(), cls=DecimalEncoder)
-df = pd.read_json(data, convert_dates=['last_update'])
+data = json.dumps(Covid(source="worldometers").get_data(), cls=DecimalEncoder)
+df = pd.read_json(data)
+
+# add country code based on the 'country' column
+fun = lambda c: coco.convert(names=c, to='ISO2') if len(c) > 2 else c
+converted = df.country.apply(fun)
+df.insert(0, 'country_code', converted)
+
+# delete rows where code has not been set successfully or country name is '0'
+df = df[(df.country_code != 'not found') & (df.country != '0')]
+df.total_deaths_per_million = df.total_deaths_per_million.astype(int)
 
 
 # ==== Load ====
@@ -32,21 +41,13 @@ def connect():
 engine = connect()
 
 table_name = 'covid19'
-new = True
 
-try:
-    newest_date = engine.execute('select max(last_update) from covid19;')
-    if newest_date.first()[0] == df.last_update.max().to_pydatetime():
-        new = False
-except sqlalchemy.exc.OperationalError:
-    print("'covid19' table does not exist!")
+df.to_sql(
+    table_name,
+    engine,
+    if_exists='replace',
+    index=False
+)
 
-if new:
-    df.to_sql(
-        table_name,
-        engine,
-        if_exists='replace',
-        index=False
-    )
-
-print(pd.read_sql_query('select * from covid19 limit1', engine).head(5))
+# show first 5 rows queried form covid19 table to verify successful insertion
+print(pd.read_sql_query('select * from covid19 limit 5', engine).head())

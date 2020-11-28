@@ -2,3 +2,4 @@ SQLAlchemy==1.3.20
 pandas==1.1.3
 covid==2.4.0
 pymysql==0.10.1
+country-converter==0.7.1
